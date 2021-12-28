@@ -17,8 +17,35 @@ provider:
 
 resources:
   Resources:
-    DocumentBucket:
+
+    PhotoEventsQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        MessageRetentionPeriod: 60
+        QueueName: ${self:custom.appName}-photo-events
+        VisibilityTimeout: 60
+
+    S3EventQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      DependsOn: PhotoEventsQueue
+      Properties:
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Sid: PutS3Events
+              Action: SQS:SendMessage
+              Resource: !GetAtt PhotoEventsQueue.Arn
+              Principal:
+                Service: s3.amazonaws.com
+        Queues:
+          - !Ref PhotoEventsQueue
+
+    PhotoBucket:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:custom.appName}
         AccessControl: Private
+        NotificationConfiguration:
+          QueueConfigurations:
+            - Event: s3:ObjectCreated:*
+              Queue: arn:aws:sqs:eu-west-2:371098323635:king-family-photos-dev-photo-events
