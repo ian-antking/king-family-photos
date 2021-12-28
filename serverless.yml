@@ -8,10 +8,13 @@ custom:
 
 package:
   individually: true
+  patterns:
+    - '!./**'
+    - ./bin/**
 
 provider:
   name: "aws"
-  runtime: nodejs12.x
+  runtime: go1.x
   lambdaHashingVersion: 20201221
   region: eu-west-2
 
@@ -66,3 +69,12 @@ resources:
               Action:
                 - S3:ListBucket
               Resource: !GetAtt PhotoBucket.Arn
+
+functions:
+  resizeImage:
+    name: ${self:custom.appName}-resize-photo
+    handler: bin/resizePhoto
+    events:
+      - sqs:
+          arn: !GetAtt PhotoEventsQueue.Arn
+    
