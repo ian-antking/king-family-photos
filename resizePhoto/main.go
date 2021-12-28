@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/ian-antking/king-family-photos/resizePhoto/event"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -10,9 +12,11 @@ import (
 
 type Handler struct {}
 
-func (h *Handler) Run(_ context.Context, event events.SQSEvent) error {
-	for _, record := range event.Records {
-		fmt.Println(record.Body)
+func (h *Handler) Run(_ context.Context, sqsEvent events.SQSEvent) error {
+	for _, record := range sqsEvent.Records {
+		var message event.Message
+		_ = json.Unmarshal([]byte(record.Body), &message)
+		fmt.Printf("%+v\n", message)
 	}
 
 	return nil
