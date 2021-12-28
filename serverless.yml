@@ -49,3 +49,20 @@ resources:
           QueueConfigurations:
             - Event: s3:ObjectCreated:*
               Queue: !GetAtt PhotoEventsQueue.Arn
+    
+    PhotoBucketSyncPolicy:
+      Type: AWS::IAM::ManagedPolicy
+      DependsOn: PhotoBucket
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - S3:PutObject
+                - S3:GetObject
+              Resource: !Join [ "/", [ !GetAtt PhotoBucket.Arn, "*" ]]
+            - Effect: Allow
+              Action:
+                - S3:ListBucket
+              Resource: !GetAtt PhotoBucket.Arn
