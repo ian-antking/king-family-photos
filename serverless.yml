@@ -48,4 +48,4 @@ resources:
         NotificationConfiguration:
           QueueConfigurations:
             - Event: s3:ObjectCreated:*
-              Queue: arn:aws:sqs:eu-west-2:371098323635:king-family-photos-dev-photo-events
+              Queue: !GetAtt PhotoEventsQueue.Arn
