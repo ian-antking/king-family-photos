@@ -37,7 +37,6 @@ resources:
     PhotoEventsQueue:
       Type: AWS::SQS::Queue
       Properties:
-        MessageRetentionPeriod: 60
         QueueName: ${self:custom.appName}-photo-events
         VisibilityTimeout: 60
 
@@ -52,7 +51,7 @@ resources:
               Action: SQS:SendMessage
               Resource: !GetAtt PhotoEventsQueue.Arn
               Principal:
-                Service: photo.amazonaws.com
+                Service: s3.amazonaws.com
         Queues:
           - !Ref PhotoEventsQueue
 
@@ -63,12 +62,12 @@ resources:
         AccessControl: Private
         NotificationConfiguration:
           QueueConfigurations:
-            - Event: photo:ObjectCreated:*
+            - Event: s3:ObjectCreated:*
               Queue: !GetAtt PhotoEventsQueue.Arn
     
     PhotoBucketSyncPolicy:
       Type: AWS::IAM::ManagedPolicy
-      DependsOn: PhotoBucket
+      DependsOn: PhotoDisplayBucket
       Properties:
         PolicyDocument:
           Version: "2012-10-17"
@@ -77,11 +76,11 @@ resources:
               Action:
                 - S3:PutObject
                 - S3:GetObject
-              Resource: !Join [ "/", [ !GetAtt PhotoBucket.Arn, "*" ]]
+              Resource: !Join [ "/", [ !GetAtt PhotoDisplayBucket.Arn, "*" ]]
             - Effect: Allow
               Action:
                 - S3:ListBucket
-              Resource: !GetAtt PhotoBucket.Arn
+              Resource: !GetAtt PhotoDisplayBucket.Arn
 
     PhotoDisplayBucket:
       Type: AWS::S3::Bucket
