@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ian-antking/king-family-photos/resizePhoto/event"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/ian-antking/king-family-photos/resizePhoto/event"
 )
 
 type Handler struct {}
