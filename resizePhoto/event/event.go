@@ -14,7 +14,7 @@ type Object struct {
 }
 
 type Record struct {
-	S3 S3 `json:"photo,omitempty"`
+	S3 S3 `json:"s3,omitempty"`
 }
 
 type Message struct {
