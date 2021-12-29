@@ -1,6 +1,6 @@
 #! /bin/bash
 
-aws s3 sync s3://king-family-photos-dev-display /home/pi/Pictures
+aws s3 sync s3://king-family-photos-dev-display /home/pi/Pictures --delete
 feh \
   --recursive \
   --randomize \
