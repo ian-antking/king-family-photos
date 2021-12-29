@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -30,7 +32,13 @@ func NewHandler(repository photo.Repository) Handler {
 }
 
 func main() {
-	photoRepository := photo.S3{}
+	awsSession := session.Must(session.NewSessionWithOptions(
+		session.Options{
+			SharedConfigState: session.SharedConfigEnable,
+		},
+	))
+	s3Client := s3.New(awsSession)
+	photoRepository := photo.NewS3(s3Client)
 	handler := NewHandler(&photoRepository)
 	lambda.Start(handler.Run)
 }
