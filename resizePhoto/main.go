@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -14,24 +15,66 @@ import (
 )
 
 type Handler struct {
-	photo photo.Repository
+	photo             photo.Repository
+	displayBucketName string
 }
 
 func (h *Handler) Run(_ context.Context, sqsEvent events.SQSEvent) error {
-	for _, record := range sqsEvent.Records {
-		var message event.Message
-		_ = json.Unmarshal([]byte(record.Body), &message)
-		fmt.Printf("%+v\n", message)
+	messages := getMessages(sqsEvent)
+	params := getPhotoParams(messages)
+
+	images := make(chan photo.GetPhotoOutput, len(params))
+
+	for _, param := range params {
+		go func(param photo.GetPhotoParams) {
+			getPhotoOutput, err := h.photo.Get(param)
+
+			if nil != err {
+				fmt.Println(err.Error())
+			}
+
+			images <- getPhotoOutput
+		}(param)
 	}
 
 	return nil
 }
 
-func NewHandler(repository photo.Repository) Handler {
-	return Handler{photo: repository}
+func NewHandler(repository photo.Repository, bucketName string) Handler {
+	return Handler{
+		photo: repository,
+		displayBucketName: bucketName,
+	}
+}
+
+func getMessages(sqsEvent events.SQSEvent) []event.Message {
+	var messages []event.Message
+	for _, record := range sqsEvent.Records {
+		var message event.Message
+		_ = json.Unmarshal([]byte(record.Body), &message)
+		messages = append(messages, message)
+	}
+
+	return messages
+}
+
+func getPhotoParams(messages []event.Message) []photo.GetPhotoParams {
+	var params []photo.GetPhotoParams
+
+	for _, message := range messages {
+		for _, record := range message.Records {
+			params = append(params, photo.GetPhotoParams{
+				Bucket: record.S3.Bucket.Name,
+				Key:    record.S3.Object.Key,
+			})
+		}
+	}
+
+	return params
 }
 
 func main() {
+	displayBucketName := os.Getenv("DISPLAY_BUCKET")
 	awsSession := session.Must(session.NewSessionWithOptions(
 		session.Options{
 			SharedConfigState: session.SharedConfigEnable,
@@ -39,6 +82,6 @@ func main() {
 	))
 	s3Client := s3.New(awsSession)
 	photoRepository := photo.NewS3(s3Client)
-	handler := NewHandler(&photoRepository)
+	handler := NewHandler(&photoRepository, displayBucketName)
 	lambda.Start(handler.Run)
 }
