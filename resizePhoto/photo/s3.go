@@ -37,6 +37,7 @@ func (s *S3) Get(params GetPhotoParams) (GetPhotoOutput, error) {
 
 	_, err := s.downloader.Download(buffer, &getObjectInput)
 
+
 	if nil != err {
 		return GetPhotoOutput{}, err
 	}

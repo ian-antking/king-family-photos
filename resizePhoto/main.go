@@ -20,39 +20,36 @@ type Handler struct {
 	displayBucketName string
 }
 
-func (h *Handler) getImages(params []photo.GetPhotoParams, outputChannel chan photo.GetPhotoOutput) {
-	defer close(outputChannel)
+func (h *Handler) getImages(params []photo.GetPhotoParams) []photo.GetPhotoOutput {
+	var images []photo.GetPhotoOutput
 	for _, param := range params {
-		go func(param photo.GetPhotoParams) {
 			getPhotoOutput, err := h.photo.Get(param)
 
 			if nil != err {
 				fmt.Println(err.Error())
 			}
-
-			outputChannel <- getPhotoOutput
-		}(param)
+		images = append(images, getPhotoOutput)
 	}
+
+	return images
 }
 
 func (h *Handler) putImage(image photo.GetPhotoOutput) error {
 	err := h.photo.Put(photo.PutPhotoParams{
 		Image:  image.Image,
 		Key:    image.Key,
-		Bucket: image.Bucket,
+		Bucket: h.displayBucketName,
 	})
 
 	return err
 }
 
-func (h *Handler) processImages(input <-chan photo.GetPhotoOutput) {
-	for image := range input {
-		go func(image photo.GetPhotoOutput) {
-			err := h.putImage(image)
-			if nil != err {
-				fmt.Println(err.Error())
-			}
-		}(image)
+func (h *Handler) processImages(images []photo.GetPhotoOutput) {
+	for _, image := range images {
+		err := h.putImage(image)
+		if nil != err {
+			fmt.Println(err.Error())
+		}
 	}
 }
 
@@ -60,11 +57,10 @@ func (h *Handler) Run(_ context.Context, sqsEvent events.SQSEvent) error {
 	messages := getMessages(sqsEvent)
 	params := getPhotoParams(messages)
 
-	imageChannel := make(chan photo.GetPhotoOutput, len(params))
 
-	h.getImages(params, imageChannel)
+	images := h.getImages(params)
 
-	h.processImages(imageChannel)
+	h.processImages(images)
 
 	return nil
 }
