@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -29,7 +29,7 @@ func (h *Handler) getImages(params []photo.GetPhotoParams) []photo.GetPhotoOutpu
 		getPhotoOutput, err := h.photo.Get(param)
 
 		if nil != err {
-			fmt.Println(err.Error())
+			log.Fatalf("Error getting photo from s3: %s", err.Error())
 		}
 		images = append(images, getPhotoOutput)
 	}
@@ -52,7 +52,7 @@ func (h *Handler) processImages(images []photo.GetPhotoOutput) []processor.Image
 	for _, image := range images {
 		processedImage, err := h.imageProcessor.Run(processor.Image(image))
 		if nil != err {
-			fmt.Println(err.Error())
+			log.Fatalf("Error processing image: %s", err.Error())
 		}
 		processedImages = append(processedImages, processedImage)
 	}
@@ -64,7 +64,7 @@ func (h *Handler) putImages(images []processor.Image) {
 	for _, image := range images {
 		err := h.putImage(image)
 		if nil != err {
-			fmt.Println(err.Error())
+			log.Fatalf("Error putting image in s3: %s", err.Error())
 		}
 	}
 }
