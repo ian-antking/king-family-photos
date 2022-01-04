@@ -4,8 +4,13 @@ BIN_DIR = $(CURRENT_DIR)/bin
 
 .PHONY: build clean deploy-dev deploy-live
 
-build: 
+build: build-remove-photo build-resize-photo
+
+build-resize-photo:
 	cd $(CURRENT_DIR)/resizePhoto; env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o $(BIN_DIR)/resizePhoto main.go
+
+build-remove-photo:
+	cd $(CURRENT_DIR)/removePhoto; env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o $(BIN_DIR)/removePhoto main.go
 
 clean:
 	rm -rf ./bin
