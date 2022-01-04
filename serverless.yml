@@ -27,33 +27,31 @@ provider:
         - Effect: Allow
           Action:
             - s3:GetObject
-            - s3:PutObject
           Resource: arn:aws:s3:::${self:custom.appName}/*
 
 
 resources:
   Resources:
-
-    PhotoEventsQueue:
+    PhotoCreateEventsQueue:
       Type: AWS::SQS::Queue
       Properties:
-        QueueName: ${self:custom.appName}-photo-events
+        QueueName: ${self:custom.appName}-photo-create-events
         VisibilityTimeout: 60
 
     S3EventQueuePolicy:
       Type: AWS::SQS::QueuePolicy
-      DependsOn: PhotoEventsQueue
+      DependsOn: PhotoCreateEventsQueue
       Properties:
         PolicyDocument:
           Statement:
             - Effect: Allow
               Sid: PutS3Events
               Action: SQS:SendMessage
-              Resource: !GetAtt PhotoEventsQueue.Arn
+              Resource: !GetAtt PhotoCreateEventsQueue.Arn
               Principal:
                 Service: s3.amazonaws.com
         Queues:
-          - !Ref PhotoEventsQueue
+          - !Ref PhotoCreateEventsQueue
 
     PhotoBucket:
       Type: AWS::S3::Bucket
@@ -63,8 +61,8 @@ resources:
         NotificationConfiguration:
           QueueConfigurations:
             - Event: s3:ObjectCreated:*
-              Queue: !GetAtt PhotoEventsQueue.Arn
-    
+              Queue: !GetAtt PhotoCreateEventsQueue.Arn
+
     PhotoBucketSyncPolicy:
       Type: AWS::IAM::ManagedPolicy
       DependsOn: PhotoDisplayBucket
@@ -94,6 +92,6 @@ functions:
     handler: bin/resizePhoto
     events:
       - sqs:
-          arn: !GetAtt PhotoEventsQueue.Arn
+          arn: !GetAtt PhotoCreateEventsQueue.Arn
     environment:
       DISPLAY_BUCKET: ${self:custom.appName}-display
