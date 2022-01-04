@@ -53,6 +53,27 @@ resources:
         Queues:
           - !Ref PhotoCreateEventsQueue
 
+    PhotoDeleteEventsQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.appName}-photo-delete-events
+        VisibilityTimeout: 60
+
+    PhotoDeleteEventsQueuePolicy:
+      Type: AWS::SQS::QueuePolicy
+      DependsOn: PhotoDeleteEventsQueue
+      Properties:
+        PolicyDocument:
+          Statement:
+            - Effect: Allow
+              Sid: PutS3Events
+              Action: SQS:SendMessage
+              Resource: !GetAtt PhotoDeleteEventsQueue.Arn
+              Principal:
+                Service: s3.amazonaws.com
+        Queues:
+          - !Ref PhotoDeleteEventsQueue
+
     PhotoBucket:
       Type: AWS::S3::Bucket
       Properties:
@@ -62,6 +83,8 @@ resources:
           QueueConfigurations:
             - Event: s3:ObjectCreated:*
               Queue: !GetAtt PhotoCreateEventsQueue.Arn
+            - Event: s3:ObjectRemoved:*
+              Queue: !GetAtt PhotoDeleteEventsQueue.Arn
 
     PhotoBucketSyncPolicy:
       Type: AWS::IAM::ManagedPolicy
