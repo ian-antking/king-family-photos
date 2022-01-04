@@ -13,28 +13,30 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/ian-antking/king-family-photos/resizePhoto/event"
 	"github.com/ian-antking/king-family-photos/resizePhoto/photo"
+	"github.com/ian-antking/king-family-photos/resizePhoto/processor"
 )
 
 type Handler struct {
 	photo             photo.Repository
 	displayBucketName string
+	imageProcessor         processor.Processor
 }
 
 func (h *Handler) getImages(params []photo.GetPhotoParams) []photo.GetPhotoOutput {
 	var images []photo.GetPhotoOutput
 	for _, param := range params {
-			getPhotoOutput, err := h.photo.Get(param)
+		getPhotoOutput, err := h.photo.Get(param)
 
-			if nil != err {
-				fmt.Println(err.Error())
-			}
+		if nil != err {
+			fmt.Println(err.Error())
+		}
 		images = append(images, getPhotoOutput)
 	}
 
 	return images
 }
 
-func (h *Handler) putImage(image photo.GetPhotoOutput) error {
+func (h *Handler) putImage(image processor.Image) error {
 	err := h.photo.Put(photo.PutPhotoParams{
 		Image:  image.Image,
 		Key:    image.Key,
@@ -44,31 +46,25 @@ func (h *Handler) putImage(image photo.GetPhotoOutput) error {
 	return err
 }
 
-func (h *Handler) processImages(images []photo.GetPhotoOutput) {
+func (h *Handler) processImages(images []photo.GetPhotoOutput) []processor.Image {
+	var processedImages []processor.Image
+	for _, image := range images {
+		processedImage, err := h.imageProcessor.Run(processor.Image(image))
+		if nil != err {
+			fmt.Println(err.Error())
+		}
+		processedImages = append(processedImages, processedImage)
+	}
+
+	return processedImages
+}
+
+func (h *Handler) putImages(images []processor.Image) {
 	for _, image := range images {
 		err := h.putImage(image)
 		if nil != err {
 			fmt.Println(err.Error())
 		}
-	}
-}
-
-func (h *Handler) Run(_ context.Context, sqsEvent events.SQSEvent) error {
-	messages := getMessages(sqsEvent)
-	params := getPhotoParams(messages)
-
-
-	images := h.getImages(params)
-
-	h.processImages(images)
-
-	return nil
-}
-
-func NewHandler(repository photo.Repository, bucketName string) Handler {
-	return Handler{
-		photo:             repository,
-		displayBucketName: bucketName,
 	}
 }
 
@@ -98,6 +94,25 @@ func getPhotoParams(messages []event.Message) []photo.GetPhotoParams {
 	return params
 }
 
+func (h *Handler) Run(_ context.Context, sqsEvent events.SQSEvent) error {
+	messages := getMessages(sqsEvent)
+	params := getPhotoParams(messages)
+
+	images := h.getImages(params)
+	processedImages := h.processImages(images)
+	h.putImages(processedImages)
+
+	return nil
+}
+
+func NewHandler(repository photo.Repository, bucketName string, imageProcessor processor.Processor) Handler {
+	return Handler{
+		photo:             repository,
+		displayBucketName: bucketName,
+		imageProcessor: imageProcessor,
+	}
+}
+
 func main() {
 	displayBucketName := os.Getenv("DISPLAY_BUCKET")
 
@@ -111,7 +126,8 @@ func main() {
 	s3Downloader := s3manager.NewDownloader(awsSession)
 	s3Uploader := s3manager.NewUploader(awsSession)
 	photoRepository := photo.NewS3(s3Client, s3Downloader, s3Uploader)
-	handler := NewHandler(&photoRepository, displayBucketName)
+	imageProcessor := processor.NewResizer(0, 480)
+	handler := NewHandler(&photoRepository, displayBucketName, &imageProcessor)
 
 	lambda.Start(handler.Run)
 }
