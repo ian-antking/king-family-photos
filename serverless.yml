@@ -38,7 +38,7 @@ resources:
         QueueName: ${self:custom.appName}-photo-create-events
         VisibilityTimeout: 60
 
-    S3EventQueuePolicy:
+    PhotoCreateEventsQueuePolicy:
       Type: AWS::SQS::QueuePolicy
       DependsOn: PhotoCreateEventsQueue
       Properties:
