@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+
 	"github.com/ian-antking/king-family-photos/resizePhoto/event"
 	"github.com/ian-antking/king-family-photos/resizePhoto/photo"
 	"github.com/ian-antking/king-family-photos/resizePhoto/processor"
@@ -19,7 +20,7 @@ import (
 type Handler struct {
 	photo             photo.Repository
 	displayBucketName string
-	imageProcessor         processor.Processor
+	imageProcessor    processor.Processor
 }
 
 func (h *Handler) getImages(params []photo.GetPhotoParams) []photo.GetPhotoOutput {
@@ -109,7 +110,7 @@ func NewHandler(repository photo.Repository, bucketName string, imageProcessor p
 	return Handler{
 		photo:             repository,
 		displayBucketName: bucketName,
-		imageProcessor: imageProcessor,
+		imageProcessor:    imageProcessor,
 	}
 }
 
