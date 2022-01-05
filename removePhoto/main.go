@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/ian-antking/king-family-photos/removePhoto/event"
-	"github.com/ian-antking/king-family-photos/removePhoto/photo"
 	"log"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+
+	"github.com/ian-antking/king-family-photos/removePhoto/event"
+	"github.com/ian-antking/king-family-photos/removePhoto/photo"
 )
 
 type Handler struct {
