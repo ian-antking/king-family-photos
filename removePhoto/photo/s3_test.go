@@ -1,6 +1,7 @@
 package photo
 
 import (
+	"errors"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -32,6 +33,19 @@ func (s *s3TestSuite) TestDelete() {
 		})
 
 		assert.Nil(t, err)
+	})
+	s.T().Run("relays any errors from s3", func(t *testing.T) {
+		s.setUpMocks()
+		expectedInput := s3.DeleteObjectInput{Bucket: aws.String("bucket"), Key: aws.String("key")}
+		s.s3.On("DeleteObject", &expectedInput).Return(&s3.DeleteObjectOutput{}, errors.New("something went wrong"))
+		photoRepo := NewS3(s.s3)
+
+		err := photoRepo.Delete(DeletePhotoParams{
+			Bucket: "bucket",
+			Key:    "key",
+		})
+
+		assert.Equal(t, "something went wrong", err.Error())
 	})
 }
 
