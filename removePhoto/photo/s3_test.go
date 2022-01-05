@@ -37,7 +37,7 @@ func (s *s3TestSuite) TestDelete() {
 	s.T().Run("relays any errors from s3", func(t *testing.T) {
 		s.setUpMocks()
 		expectedInput := s3.DeleteObjectInput{Bucket: aws.String("bucket"), Key: aws.String("key")}
-		s.s3.On("DeleteObject", &expectedInput).Return(&s3.DeleteObjectOutput{}, errors.New("something went worng"))
+		s.s3.On("DeleteObject", &expectedInput).Return(&s3.DeleteObjectOutput{}, errors.New("something went wrong"))
 		photoRepo := NewS3(s.s3)
 
 		err := photoRepo.Delete(DeletePhotoParams{
