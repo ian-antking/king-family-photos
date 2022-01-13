@@ -28,7 +28,7 @@ func (h *Handler) getImages(params []photo.GetPhotoParams) ([]photo.GetPhotoOutp
 		getPhotoOutput, err := h.photo.Get(param)
 
 		if nil != err {
-			return []photo.GetPhotoOutput{}, fmt.Errorf("error getting photo from s3: %s", err.Error())
+			return []photo.GetPhotoOutput{}, fmt.Errorf("error getting %s from %s: %s", param.Key, param.Bucket, err.Error())
 		}
 		images = append(images, getPhotoOutput)
 	}
@@ -63,7 +63,7 @@ func (h *Handler) putImages(images []processor.Image) error {
 	for _, image := range images {
 		err := h.putImage(image)
 		if nil != err {
-			return fmt.Errorf("error putting image in s3: %s", err.Error())
+			return fmt.Errorf("error getting %s from %s: %s", image.Key, image.Bucket, err.Error())
 		}
 	}
 	return nil
