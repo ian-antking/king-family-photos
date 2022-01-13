@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -13,21 +15,14 @@ import (
 
 type handlerTestSuite struct {
 	suite.Suite
-	photoRepository photo.Repository
+	photoRepository *mockPhotoRepository
 }
 
 func (s *handlerTestSuite) TestGetPhotoParams() {
 	s.T().Run("converts records on an S3Event to DeletePhotoParams", func(t *testing.T) {
 		s.setupMocks()
 		handler := NewHandler("displayBucket", s.photoRepository)
-		expected := []photo.DeletePhotoParams{
-			{
-				Bucket: "displayBucket",
-				Key:    "photoKey",
-			},
-		}
-
-		result := handler.getPhotoParams(events.S3Event{
+		event := events.S3Event{
 			Records: []events.S3EventRecord{
 				{
 					S3: events.S3Entity{
@@ -40,9 +35,81 @@ func (s *handlerTestSuite) TestGetPhotoParams() {
 					},
 				},
 			},
-		})
+		}
+		expected := []photo.DeletePhotoParams{
+			{
+				Bucket: "displayBucket",
+				Key:    "photoKey",
+			},
+		}
+
+		result := handler.getPhotoParams(event)
 
 		assert.Equal(t, expected, result)
+	})
+}
+
+func (s *handlerTestSuite) TestRun() {
+	s.T().Run("processes s3 event and deletes photos from display bucket", func(t *testing.T) {
+		s.setupMocks()
+		handler := NewHandler("displayBucket", s.photoRepository)
+		event := events.S3Event{
+			Records: []events.S3EventRecord{
+				{
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "ingestBucket",
+						},
+						Object: events.S3Object{
+							Key: "photoKey",
+						},
+					},
+				},
+				{
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "ingestBucket",
+						},
+						Object: events.S3Object{
+							Key: "photoKey",
+						},
+					},
+				},
+			},
+		}
+		s.photoRepository.On("Delete", photo.DeletePhotoParams{
+			Bucket: "displayBucket",
+			Key:    "photoKey",
+		}).Twice().Return(nil)
+		err := handler.Run(context.Background(), event)
+
+		assert.Nil(t, err)
+	})
+
+	s.T().Run("processes s3 event and deletes photos from display bucket", func(t *testing.T) {
+		s.setupMocks()
+		handler := NewHandler("displayBucket", s.photoRepository)
+		event := events.S3Event{
+			Records: []events.S3EventRecord{
+				{
+					S3: events.S3Entity{
+						Bucket: events.S3Bucket{
+							Name: "ingestBucket",
+						},
+						Object: events.S3Object{
+							Key: "photoKey",
+						},
+					},
+				},
+			},
+		}
+		s.photoRepository.On("Delete", photo.DeletePhotoParams{
+			Bucket: "displayBucket",
+			Key:    "photoKey",
+		}).Once().Return(errors.New("something went wrong"))
+		err := handler.Run(context.Background(), event)
+
+		assert.Equal(t, "error deleting photoKey from displayBucket: something went wrong", err.Error())
 	})
 }
 
