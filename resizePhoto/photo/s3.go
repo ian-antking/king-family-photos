@@ -10,9 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
-type s3Client interface {
-}
-
 type s3Downloader interface {
 	Download(io.WriterAt, *s3.GetObjectInput, ...func(*s3manager.Downloader)) (int64, error)
 }
@@ -22,7 +19,6 @@ type s3Uploader interface {
 }
 
 type S3 struct {
-	client     s3Client
 	downloader s3Downloader
 	uploader   s3Uploader
 }
@@ -66,9 +62,8 @@ func (s *S3) Put(params PutPhotoParams) error {
 	return nil
 }
 
-func NewS3(client s3Client, downloader s3Downloader, uploader s3Uploader) S3 {
+func NewS3(downloader s3Downloader, uploader s3Uploader) S3 {
 	return S3{
-		client:     client,
 		downloader: downloader,
 		uploader:   uploader,
 	}

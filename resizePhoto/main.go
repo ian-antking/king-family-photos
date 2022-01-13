@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 
 	"github.com/ian-antking/king-family-photos/resizePhoto/photo"
@@ -92,7 +91,7 @@ func (h *Handler) Run(_ context.Context, s3Event events.S3Event) error {
 	}
 
 	processedImages := h.processImages(images)
-	 err = h.putImages(processedImages)
+	err = h.putImages(processedImages)
 
 	return err
 }
@@ -114,10 +113,9 @@ func main() {
 		},
 	))
 
-	s3Client := s3.New(awsSession)
 	s3Downloader := s3manager.NewDownloader(awsSession)
 	s3Uploader := s3manager.NewUploader(awsSession)
-	photoRepository := photo.NewS3(s3Client, s3Downloader, s3Uploader)
+	photoRepository := photo.NewS3(s3Downloader, s3Uploader)
 	imageProcessor := processor.NewResizer(0, 480)
 	handler := NewHandler(&photoRepository, displayBucketName, &imageProcessor)
 
