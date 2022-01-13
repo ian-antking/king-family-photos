@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -21,18 +22,18 @@ type Handler struct {
 	imageProcessor    processor.Processor
 }
 
-func (h *Handler) getImages(params []photo.GetPhotoParams) []photo.GetPhotoOutput {
+func (h *Handler) getImages(params []photo.GetPhotoParams) ([]photo.GetPhotoOutput, error) {
 	var images []photo.GetPhotoOutput
 	for _, param := range params {
 		getPhotoOutput, err := h.photo.Get(param)
 
 		if nil != err {
-			log.Fatalf("Error getting photo from s3: %s", err.Error())
+			return []photo.GetPhotoOutput{}, fmt.Errorf("error getting %s from %s: %s", param.Key, param.Bucket, err.Error())
 		}
 		images = append(images, getPhotoOutput)
 	}
 
-	return images
+	return images, nil
 }
 
 func (h *Handler) putImage(image processor.Image) error {
@@ -58,13 +59,14 @@ func (h *Handler) processImages(images []photo.GetPhotoOutput) []processor.Image
 	return processedImages
 }
 
-func (h *Handler) putImages(images []processor.Image) {
+func (h *Handler) putImages(images []processor.Image) error {
 	for _, image := range images {
 		err := h.putImage(image)
 		if nil != err {
-			log.Fatalf("Error putting image in s3: %s", err.Error())
+			return fmt.Errorf("error getting %s from %s: %s", image.Key, image.Bucket, err.Error())
 		}
 	}
+	return nil
 }
 
 func getPhotoParams(s3Event events.S3Event) []photo.GetPhotoParams {
@@ -83,11 +85,16 @@ func getPhotoParams(s3Event events.S3Event) []photo.GetPhotoParams {
 func (h *Handler) Run(_ context.Context, s3Event events.S3Event) error {
 	params := getPhotoParams(s3Event)
 
-	images := h.getImages(params)
-	processedImages := h.processImages(images)
-	h.putImages(processedImages)
+	images, err := h.getImages(params)
 
-	return nil
+	if nil != err {
+		return err
+	}
+
+	processedImages := h.processImages(images)
+	 err = h.putImages(processedImages)
+
+	return err
 }
 
 func NewHandler(repository photo.Repository, bucketName string, imageProcessor processor.Processor) Handler {
