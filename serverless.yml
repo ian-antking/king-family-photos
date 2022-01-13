@@ -28,68 +28,19 @@ provider:
         - Effect: Allow
           Action:
             - s3:GetObject
-          Resource: arn:aws:s3:::${self:custom.appName}/*
+          Resource: arn:aws:s3:::${self:custom.appName}-ingest/*
 
 
 resources:
   Resources:
-    PhotoCreateEventsQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: ${self:custom.appName}-photo-create-events
-        VisibilityTimeout: 60
-
-    PhotoCreateEventsQueuePolicy:
-      Type: AWS::SQS::QueuePolicy
-      DependsOn: PhotoCreateEventsQueue
-      Properties:
-        PolicyDocument:
-          Statement:
-            - Effect: Allow
-              Sid: PutS3Events
-              Action: SQS:SendMessage
-              Resource: !GetAtt PhotoCreateEventsQueue.Arn
-              Principal:
-                Service: s3.amazonaws.com
-        Queues:
-          - !Ref PhotoCreateEventsQueue
-
-    PhotoDeleteEventsQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: ${self:custom.appName}-photo-delete-events
-        VisibilityTimeout: 60
-
-    PhotoDeleteEventsQueuePolicy:
-      Type: AWS::SQS::QueuePolicy
-      DependsOn: PhotoDeleteEventsQueue
-      Properties:
-        PolicyDocument:
-          Statement:
-            - Effect: Allow
-              Sid: PutS3Events
-              Action: SQS:SendMessage
-              Resource: !GetAtt PhotoDeleteEventsQueue.Arn
-              Principal:
-                Service: s3.amazonaws.com
-        Queues:
-          - !Ref PhotoDeleteEventsQueue
-
-    PhotoBucket:
+    PhotoDisplayBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${self:custom.appName}
+        BucketName: ${self:custom.appName}-display
         AccessControl: Private
-        NotificationConfiguration:
-          QueueConfigurations:
-            - Event: s3:ObjectCreated:*
-              Queue: !GetAtt PhotoCreateEventsQueue.Arn
-            - Event: s3:ObjectRemoved:*
-              Queue: !GetAtt PhotoDeleteEventsQueue.Arn
 
     PhotoBucketSyncPolicy:
       Type: AWS::IAM::ManagedPolicy
-      DependsOn: PhotoDisplayBucket
       Properties:
         PolicyDocument:
           Version: "2012-10-17"
@@ -104,19 +55,14 @@ resources:
                 - S3:ListBucket
               Resource: !GetAtt PhotoDisplayBucket.Arn
 
-    PhotoDisplayBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:custom.appName}-display
-        AccessControl: Private
-
 functions:
-  resizeImage:
+  resizePhoto:
     name: ${self:custom.appName}-resize-photo
     handler: bin/resizePhoto
     events:
-      - sqs:
-          arn: !GetAtt PhotoCreateEventsQueue.Arn
+      - s3:
+          bucket: ${self:custom.appName}-ingest
+          event: s3:ObjectCreated:*
     environment:
       DISPLAY_BUCKET: ${self:custom.appName}-display
 
@@ -124,7 +70,8 @@ functions:
     name: ${self:custom.appName}-remove-photo
     handler: bin/removePhoto
     events:
-      - sqs:
-          arn: !GetAtt PhotoDeleteEventsQueue.Arn
+      - s3:
+          bucket: ${self:custom.appName}-ingest
+          event: s3:ObjectRemoved:*
     environment:
       DISPLAY_BUCKET: ${self:custom.appName}-display

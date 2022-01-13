@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"os"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 
-	"github.com/ian-antking/king-family-photos/resizePhoto/event"
 	"github.com/ian-antking/king-family-photos/resizePhoto/photo"
 	"github.com/ian-antking/king-family-photos/resizePhoto/processor"
 )
@@ -69,35 +67,21 @@ func (h *Handler) putImages(images []processor.Image) {
 	}
 }
 
-func getMessages(sqsEvent events.SQSEvent) []event.Message {
-	var messages []event.Message
-	for _, record := range sqsEvent.Records {
-		var message event.Message
-		_ = json.Unmarshal([]byte(record.Body), &message)
-		messages = append(messages, message)
-	}
-
-	return messages
-}
-
-func getPhotoParams(messages []event.Message) []photo.GetPhotoParams {
+func getPhotoParams(s3Event events.S3Event) []photo.GetPhotoParams {
 	var params []photo.GetPhotoParams
 
-	for _, message := range messages {
-		for _, record := range message.Records {
-			params = append(params, photo.GetPhotoParams{
-				Bucket: record.S3.Bucket.Name,
-				Key:    record.S3.Object.Key,
-			})
-		}
+	for _, message := range s3Event.Records {
+		params = append(params, photo.GetPhotoParams{
+			Bucket: message.S3.Bucket.Name,
+			Key:    message.S3.Object.Key,
+		})
 	}
 
 	return params
 }
 
-func (h *Handler) Run(_ context.Context, sqsEvent events.SQSEvent) error {
-	messages := getMessages(sqsEvent)
-	params := getPhotoParams(messages)
+func (h *Handler) Run(_ context.Context, s3Event events.S3Event) error {
+	params := getPhotoParams(s3Event)
 
 	images := h.getImages(params)
 	processedImages := h.processImages(images)

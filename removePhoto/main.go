@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"os"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 
-	"github.com/ian-antking/king-family-photos/removePhoto/event"
 	"github.com/ian-antking/king-family-photos/removePhoto/photo"
 )
 
@@ -20,9 +18,8 @@ type Handler struct {
 	photoRepository   photo.Repository
 }
 
-func (h *Handler) Run(_ context.Context, sqsEvent events.SQSEvent) error {
-	messages := getMessages(sqsEvent)
-	params := h.getPhotoParams(messages)
+func (h *Handler) Run(_ context.Context, s3Event events.S3Event) error {
+	params := h.getPhotoParams(s3Event)
 
 	for _, param := range params {
 		err := h.photoRepository.Delete(param)
@@ -35,27 +32,14 @@ func (h *Handler) Run(_ context.Context, sqsEvent events.SQSEvent) error {
 	return nil
 }
 
-func getMessages(sqsEvent events.SQSEvent) []event.Message {
-	var messages []event.Message
-	for _, record := range sqsEvent.Records {
-		var message event.Message
-		_ = json.Unmarshal([]byte(record.Body), &message)
-		messages = append(messages, message)
-	}
-
-	return messages
-}
-
-func (h *Handler) getPhotoParams(messages []event.Message) []photo.DeletePhotoParams {
+func (h *Handler) getPhotoParams(s3Event events.S3Event) []photo.DeletePhotoParams {
 	var params []photo.DeletePhotoParams
 
-	for _, message := range messages {
-		for _, record := range message.Records {
-			params = append(params, photo.DeletePhotoParams{
-				Bucket: h.displayBucketName,
-				Key:    record.S3.Object.Key,
-			})
-		}
+	for _, record := range s3Event.Records {
+		params = append(params, photo.DeletePhotoParams{
+			Bucket: h.displayBucketName,
+			Key:    record.S3.Object.Key,
+		})
 	}
 
 	return params
