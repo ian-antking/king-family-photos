@@ -41,7 +41,7 @@ func (s *s3TestSuite) TestGet() {
 		data := []byte("data")
 		idx := int64(len(data))
 		buffer := &aws.WriteAtBuffer{}
-		buffer.WriteAt(data, idx)
+		_, _ = buffer.WriteAt(data, idx)
 
 		expected := GetPhotoOutput{
 			Image:  buffer.Bytes(),
