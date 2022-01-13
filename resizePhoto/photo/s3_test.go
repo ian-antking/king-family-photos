@@ -30,7 +30,7 @@ func (s *s3TestSuite) TestGet() {
 
 		s.downloader.On(
 			"Download",
-			mock.Anything,
+			&aws.WriteAtBuffer{},
 			&s3.GetObjectInput{
 				Bucket: aws.String("ingestBucket"),
 				Key:    aws.String("photoKey"),
