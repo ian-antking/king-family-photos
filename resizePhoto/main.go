@@ -3,13 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"os"
 
 	"github.com/ian-antking/king-family-photos/resizePhoto/photo"
 	"github.com/ian-antking/king-family-photos/resizePhoto/processor"
@@ -19,6 +17,19 @@ type Handler struct {
 	photo             photo.Repository
 	displayBucketName string
 	imageProcessor    processor.Processor
+}
+
+func getPhotoParams(s3Event events.S3Event) []photo.GetPhotoParams {
+	var params []photo.GetPhotoParams
+
+	for _, message := range s3Event.Records {
+		params = append(params, photo.GetPhotoParams{
+			Bucket: message.S3.Bucket.Name,
+			Key:    message.S3.Object.Key,
+		})
+	}
+
+	return params
 }
 
 func (h *Handler) getImages(params []photo.GetPhotoParams) ([]photo.GetPhotoOutput, error) {
@@ -35,50 +46,32 @@ func (h *Handler) getImages(params []photo.GetPhotoParams) ([]photo.GetPhotoOutp
 	return images, nil
 }
 
-func (h *Handler) putImage(image processor.Image) error {
-	err := h.photo.Put(photo.PutPhotoParams{
-		Image:  image.Image,
-		Key:    image.Key,
-		Bucket: h.displayBucketName,
-	})
-
-	return err
-}
-
-func (h *Handler) processImages(images []photo.GetPhotoOutput) []processor.Image {
+func (h *Handler) processImages(images []photo.GetPhotoOutput) ([]processor.Image, error) {
 	var processedImages []processor.Image
 	for _, image := range images {
 		processedImage, err := h.imageProcessor.Run(processor.Image(image))
 		if nil != err {
-			log.Fatalf("Error processing image: %s", err.Error())
+			return []processor.Image{}, fmt.Errorf("error processing image %s/%s: %s", image.Bucket, image.Key, err.Error())
+		} else {
+			processedImages = append(processedImages, processedImage)
 		}
-		processedImages = append(processedImages, processedImage)
 	}
 
-	return processedImages
+	return processedImages, nil
 }
 
 func (h *Handler) putImages(images []processor.Image) error {
 	for _, image := range images {
-		err := h.putImage(image)
+		err := h.photo.Put(photo.PutPhotoParams{
+			Image:  image.Image,
+			Key:    image.Key,
+			Bucket: h.displayBucketName,
+		})
 		if nil != err {
-			return fmt.Errorf("error getting %s from %s: %s", image.Key, image.Bucket, err.Error())
+			return fmt.Errorf("error putting %s in %s: %s", image.Key, image.Bucket, err.Error())
 		}
 	}
 	return nil
-}
-
-func getPhotoParams(s3Event events.S3Event) []photo.GetPhotoParams {
-	var params []photo.GetPhotoParams
-
-	for _, message := range s3Event.Records {
-		params = append(params, photo.GetPhotoParams{
-			Bucket: message.S3.Bucket.Name,
-			Key:    message.S3.Object.Key,
-		})
-	}
-
-	return params
 }
 
 func (h *Handler) Run(_ context.Context, s3Event events.S3Event) error {
@@ -90,7 +83,12 @@ func (h *Handler) Run(_ context.Context, s3Event events.S3Event) error {
 		return err
 	}
 
-	processedImages := h.processImages(images)
+	processedImages, err := h.processImages(images)
+
+	if nil != err {
+		return err
+	}
+
 	err = h.putImages(processedImages)
 
 	return err

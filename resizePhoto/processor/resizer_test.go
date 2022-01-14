@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ResizerTestSuite struct {
+type resizerTestSuite struct {
 	suite.Suite
 }
 
-func (s *ResizerTestSuite) TestRun() {
+func (s *resizerTestSuite) TestRun() {
 	s.T().Run("reduces image width/height to values set at instantiation", func(t *testing.T) {
 		img := image.NewRGBA(image.Rect(0, 0, 100, 100))
 
@@ -128,5 +128,5 @@ func (s *ResizerTestSuite) TestRun() {
 }
 
 func TestResizerTestSuite(t *testing.T) {
-	suite.Run(t, new(ResizerTestSuite))
+	suite.Run(t, new(resizerTestSuite))
 }
