@@ -1,0 +1,25 @@
+name: Deploy Prod
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16.13
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: Install Serverless
+        run: npm i -g serverless
+      - name: Configure Serverless
+        run: serverless config credentials --provider aws --key ${{ secrets.AWS_KEY }} --secret ${{ secrets.AWS_SECRET }}
+
+      - name: Deploy Live
+        run: make deploy-live
