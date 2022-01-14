@@ -1,6 +1,7 @@
 package photo
 
 import (
+	"bytes"
 	"errors"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -25,7 +26,7 @@ func (s *s3TestSuite) setUpMocks() {
 }
 
 func (s *s3TestSuite) TestGet() {
-	s.T().Run("calls GetObject with correct input", func(t *testing.T) {
+	s.T().Run("calls Download with correct input", func(t *testing.T) {
 		s.setUpMocks()
 		photoRepo := NewS3(s.downloader, s.uploader)
 
@@ -78,11 +79,55 @@ func (s *s3TestSuite) TestGet() {
 			Key:    "photoKey",
 		})
 
+		assert.NotNil(t, err)
 		assert.Equal(t, "something went wrong", err.Error())
 	})
 }
 
-func (s *s3TestSuite) TestPut() {}
+func (s *s3TestSuite) TestPut() {
+	s.T().Run("calls Upload with correct input", func(t *testing.T) {
+		s.setUpMocks()
+		photoRepo := NewS3(s.downloader, s.uploader)
+
+		params := PutPhotoParams{
+			Image:  []byte{},
+			Key:    "photoKey",
+			Bucket: "displayBucket",
+		}
+
+		s.uploader.On("Upload", &s3manager.UploadInput{
+			Body:   bytes.NewReader([]byte{}),
+			Bucket: aws.String("displayBucket"),
+			Key:    aws.String("photoKey"),
+		}, mock.Anything).Return(&s3manager.UploadOutput{}, nil)
+
+		err := photoRepo.Put(params)
+
+		assert.Nil(t, err)
+	})
+
+	s.T().Run("forwards errors from s3", func(t *testing.T) {
+		s.setUpMocks()
+		photoRepo := NewS3(s.downloader, s.uploader)
+
+		params := PutPhotoParams{
+			Image:  []byte{},
+			Key:    "photoKey",
+			Bucket: "displayBucket",
+		}
+
+		s.uploader.On("Upload", &s3manager.UploadInput{
+			Body:   bytes.NewReader([]byte{}),
+			Bucket: aws.String("displayBucket"),
+			Key:    aws.String("photoKey"),
+		}, mock.Anything).Return(&s3manager.UploadOutput{}, errors.New("something went wrong"))
+
+		err := photoRepo.Put(params)
+
+		assert.NotNil(t, err)
+		assert.Equal(t, "something went wrong", err.Error())
+	})
+}
 
 type mockS3Downloader struct {
 	mock.Mock
