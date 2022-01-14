@@ -1,6 +1,7 @@
 package photo
 
 import (
+	"errors"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/stretchr/testify/assert"
@@ -56,6 +57,28 @@ func (s *s3TestSuite) TestGet() {
 
 		assert.Nil(t, err)
 		assert.Equal(t, expected, actual)
+	})
+
+	s.T().Run("forwards errors return from s3", func(t *testing.T) {
+		s.setUpMocks()
+		photoRepo := NewS3(s.downloader, s.uploader)
+
+		s.downloader.On(
+			"Download",
+			&aws.WriteAtBuffer{},
+			&s3.GetObjectInput{
+				Bucket: aws.String("ingestBucket"),
+				Key:    aws.String("photoKey"),
+			},
+			mock.Anything,
+		).Return(errors.New("something went wrong"))
+
+		_, err := photoRepo.Get(GetPhotoParams{
+			Bucket: "ingestBucket",
+			Key:    "photoKey",
+		})
+
+		assert.Equal(t, "something went wrong", err.Error())
 	})
 }
 
