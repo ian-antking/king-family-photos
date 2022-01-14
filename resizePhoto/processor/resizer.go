@@ -18,7 +18,7 @@ type Resizer struct {
 func (r *Resizer) Run(imageInput Image) (Image, error) {
 	img, _, decodeErr := image.Decode(bytes.NewReader(imageInput.Image))
 	if nil != decodeErr {
-		return Image{}, fmt.Errorf("error decoding image: %s", decodeErr.Error())
+		return Image{}, fmt.Errorf("error decoding image %s/%s: %s", imageInput.Bucket, imageInput.Key, decodeErr.Error())
 	}
 
 	resizedImage := resize.Resize(r.width, r.height, img, resize.Lanczos3)
@@ -27,7 +27,7 @@ func (r *Resizer) Run(imageInput Image) (Image, error) {
 	encodeErr := jpeg.Encode(buffer, resizedImage, nil)
 
 	if nil != encodeErr {
-		return Image{}, fmt.Errorf("error encoding image: %s", decodeErr.Error())
+		return Image{}, fmt.Errorf("error encoding image: %s/%s: %s", imageInput.Bucket, imageInput.Key, decodeErr.Error())
 	}
 
 	newImage := Image{
