@@ -21,5 +21,13 @@ jobs:
       - name: Configure Serverless
         run: serverless config credentials --provider aws --key ${{ secrets.AWS_KEY }} --secret ${{ secrets.AWS_SECRET }}
 
+      - name: Build resizePhoto Lambda
+        working-directory: ./resizePhoto
+        run: env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o ../bin/resizePhoto main.go
+
+      - name: Build removePhoto Lambda
+        working-directory: ./removePhoto
+        run: env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o ../bin/removePhoto main.go
+
       - name: Deploy Live
-        run: make deploy-live
+        run: serverless deploy --verbose --stage live
