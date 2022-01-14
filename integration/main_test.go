@@ -4,18 +4,16 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"image"
 	"image/jpeg"
 	"log"
 	"testing"
-	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -129,51 +127,6 @@ func (s *integrationTestSuite) getImageFromBucket(bucket, key string) image.Imag
 	img, _, _ := image.Decode(bytes.NewReader(buffer.Bytes()))
 
 	return img
-}
-
-func (s *integrationTestSuite) TestUploadImages() {
-	img := image.NewRGBA(image.Rect(0, 0, 3648, 2736))
-
-	objectKey := s.putImageInIngestBucket(img)
-
-	time.Sleep(time.Second * 5)
-
-	objects := s.listItemsInBucket(s.displayBucketName)
-
-	assert.Contains(s.T(), objects, objectKey)
-}
-
-func (s *integrationTestSuite) TestResizeImages() {
-	img := image.NewRGBA(image.Rect(0, 0, 3648, 2736))
-
-	objectKey := s.putImageInIngestBucket(img)
-
-	time.Sleep(time.Second * 5)
-
-	resizedImage := s.getImageFromBucket(s.displayBucketName, objectKey)
-
-	assert.Equal(s.T(), 480, resizedImage.Bounds().Max.Y)
-}
-
-func (s *integrationTestSuite) TestRemoveImages() {
-	img := image.NewRGBA(image.Rect(0, 0, 3648, 2736))
-
-	objectKey := s.putImageInIngestBucket(img)
-
-	time.Sleep(time.Second * 5)
-
-	objects := s.listItemsInBucket(s.displayBucketName)
-
-	assert.Contains(s.T(), objects, objectKey)
-
-	s.deleteObjectFromBucket(s.ingestBucketName, objectKey)
-
-	time.Sleep(time.Second * 5)
-
-	objects = s.listItemsInBucket(s.displayBucketName)
-
-	assert.NotContains(s.T(), objects, objectKey)
-
 }
 
 func (s *integrationTestSuite) TearDownTest() {

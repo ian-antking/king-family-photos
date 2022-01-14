@@ -19,10 +19,10 @@ func (s *resizerTestSuite) TestRun() {
 	s.T().Run("reduces image width/height to values set at instantiation", func(t *testing.T) {
 		img := image.NewRGBA(image.Rect(0, 0, 100, 100))
 
-		resizer := NewResizer(50, 50)
-
 		buf := new(bytes.Buffer)
 		_ = jpeg.Encode(buf, img, nil)
+
+		resizer := NewResizer(50, 50)
 
 		output, err := resizer.Run(Image{
 			Image:  buf.Bytes(),
@@ -41,10 +41,10 @@ func (s *resizerTestSuite) TestRun() {
 	s.T().Run("increases image width/height to values set at instantiation", func(t *testing.T) {
 		img := image.NewRGBA(image.Rect(0, 0, 100, 100))
 
-		resizer := NewResizer(200, 200)
-
 		buf := new(bytes.Buffer)
 		_ = jpeg.Encode(buf, img, nil)
+
+		resizer := NewResizer(200, 200)
 
 		output, err := resizer.Run(Image{
 			Image:  buf.Bytes(),
@@ -63,10 +63,10 @@ func (s *resizerTestSuite) TestRun() {
 	s.T().Run("decreasing size maintains width/height ratio if only one parameter set", func(t *testing.T) {
 		img := image.NewRGBA(image.Rect(0, 0, 200, 100))
 
-		resizer := NewResizer(0, 50)
-
 		buf := new(bytes.Buffer)
 		_ = jpeg.Encode(buf, img, nil)
+
+		resizer := NewResizer(0, 50)
 
 		output, err := resizer.Run(Image{
 			Image:  buf.Bytes(),
@@ -85,10 +85,10 @@ func (s *resizerTestSuite) TestRun() {
 	s.T().Run("increasing size maintains width/height ratio if only one parameter set", func(t *testing.T) {
 		img := image.NewRGBA(image.Rect(0, 0, 200, 100))
 
-		resizer := NewResizer(0, 100)
-
 		buf := new(bytes.Buffer)
 		_ = jpeg.Encode(buf, img, nil)
+
+		resizer := NewResizer(0, 100)
 
 		output, err := resizer.Run(Image{
 			Image:  buf.Bytes(),
@@ -107,10 +107,10 @@ func (s *resizerTestSuite) TestRun() {
 	s.T().Run("handles png encoded images", func(t *testing.T) {
 		img := image.NewRGBA(image.Rect(0, 0, 100, 100))
 
-		resizer := NewResizer(50, 50)
-
 		buf := new(bytes.Buffer)
 		_ = png.Encode(buf, img)
+
+		resizer := NewResizer(50, 50)
 
 		output, err := resizer.Run(Image{
 			Image:  buf.Bytes(),
