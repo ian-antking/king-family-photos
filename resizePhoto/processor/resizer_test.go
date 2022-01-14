@@ -2,12 +2,12 @@ package processor
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"image"
 	"image/jpeg"
 	"image/png"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
