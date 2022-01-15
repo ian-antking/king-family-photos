@@ -63,4 +63,4 @@ jobs:
         run: serverless config credentials --provider aws --key ${{ secrets.AWS_KEY }} --secret ${{ secrets.AWS_SECRET }}
 
       - name: Tear Down Test Environment
-        run: remove --verbose --stage int-${{ steps.vars.outputs.sha_short }}
+        run: serverless remove --verbose --stage int-${{ steps.vars.outputs.sha_short }}
