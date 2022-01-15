@@ -21,7 +21,7 @@ var testSuite *integrationTestSuite
 
 type integrationTestSuite struct {
 	suite.Suite
-	environment       string
+	Environment       string
 	s3Downloader      *s3manager.Downloader
 	s3Uploader        *s3manager.Uploader
 	s3Client          *s3.S3
@@ -136,9 +136,10 @@ func (s *integrationTestSuite) TearDownTest() {
 
 func init() {
 	testSuite = new(integrationTestSuite)
+	flag.StringVar(&testSuite.Environment, "env", "dev", "testing environment")
+}
 
-	flag.StringVar(&testSuite.environment, "environment", "dev", "the environment the tests are running in")
-
+func TestIntegrationTestSuite(t *testing.T) {
 	awsSession := session.Must(session.NewSessionWithOptions(
 		session.Options{
 			Config: aws.Config{
@@ -150,10 +151,8 @@ func init() {
 	testSuite.s3Downloader = s3manager.NewDownloader(awsSession)
 	testSuite.s3Uploader = s3manager.NewUploader(awsSession)
 	testSuite.s3Client = s3.New(awsSession)
-	testSuite.ingestBucketName = fmt.Sprintf("king-family-photos-%s-ingest", testSuite.environment)
-	testSuite.displayBucketName = fmt.Sprintf("king-family-photos-%s-display", testSuite.environment)
-}
+	testSuite.ingestBucketName = fmt.Sprintf("king-family-photos-%s-ingest", testSuite.Environment)
+	testSuite.displayBucketName = fmt.Sprintf("king-family-photos-%s-display", testSuite.Environment)
 
-func TestIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, testSuite)
 }

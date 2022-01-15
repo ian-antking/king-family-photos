@@ -1,0 +1,66 @@
+name: Integration Test
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16.13
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: Set outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Install Serverless
+        run: npm i -g serverless
+      - name: Configure Serverless
+        run: serverless config credentials --provider aws --key ${{ secrets.AWS_KEY }} --secret ${{ secrets.AWS_SECRET }}
+
+      - name: Build resizePhoto Lambda
+        working-directory: ./resizePhoto
+        run: env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o ../bin/resizePhoto main.go
+
+      - name: Build removePhoto Lambda
+        working-directory: ./removePhoto
+        run: env GOARCH=amd64 GOOS=linux go build -ldflags="-s -w" -o ../bin/removePhoto main.go
+
+      - name: Deploy Int
+        run: serverless deploy --verbose --stage int-${{ steps.vars.outputs.sha_short }}
+
+      - name: Integration Test
+        working-directory: ./integration
+        run: go test --env=int-${{ steps.vars.outputs.sha_short }}
+
+  cleanup:
+    needs: [ integration-test ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16.13
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: Set outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Install Serverless
+        run: npm i -g serverless
+      - name: Configure Serverless
+        run: serverless config credentials --provider aws --key ${{ secrets.AWS_KEY }} --secret ${{ secrets.AWS_SECRET }}
+
+      - name: Tear Down Test Environment
+        run: serverless remove --verbose --stage int-${{ steps.vars.outputs.sha_short }}
