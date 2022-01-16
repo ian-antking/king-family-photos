@@ -109,7 +109,7 @@ func (s *handlerTestSuite) TestRun() {
 		}).Once().Return(errors.New("something went wrong"))
 		err := handler.Run(context.Background(), event)
 
-		assert.Equal(t, "error deleting photoKey from displayBucket: something went wrong", err.Error())
+		assert.Equal(t, "something went wrong", err.Error())
 	})
 }
 

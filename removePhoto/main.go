@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -25,7 +24,7 @@ func (h *Handler) Run(_ context.Context, s3Event events.S3Event) error {
 		err := h.photoRepository.Delete(param)
 
 		if nil != err {
-			return fmt.Errorf("error deleting %s from %s: %s", param.Key, param.Bucket, err.Error())
+			return err
 		}
 	}
 
