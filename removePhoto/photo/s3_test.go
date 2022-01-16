@@ -46,6 +46,7 @@ func (s *s3TestSuite) TestDelete() {
 		})
 
 		assert.Equal(t, "something went wrong", err.Error())
+		assert.True(t, errors.Is(err, DeletePhotoError{}))
 	})
 }
 

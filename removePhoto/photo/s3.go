@@ -22,7 +22,11 @@ func (s *S3) Delete(params DeletePhotoParams) error {
 
 	_, err := s.client.DeleteObject(&deletePhotoInput)
 
-	return err
+	if nil != err {
+		return DeletePhotoError{Err: err}
+	}
+
+	return nil
 }
 
 func NewS3(client s3Client) S3 {
