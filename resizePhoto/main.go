@@ -39,7 +39,7 @@ func (h *Handler) getImages(params []photo.GetPhotoParams) ([]photo.GetPhotoOutp
 		getPhotoOutput, err := h.photo.Get(param)
 
 		if nil != err {
-			return []photo.GetPhotoOutput{}, fmt.Errorf("error getting %s from %s: %s", param.Key, param.Bucket, err.Error())
+			return []photo.GetPhotoOutput{}, err
 		}
 		images = append(images, getPhotoOutput)
 	}
@@ -69,7 +69,7 @@ func (h *Handler) putImages(images []processor.Image) error {
 			Bucket: h.displayBucketName,
 		})
 		if nil != err {
-			return fmt.Errorf("error putting %s in %s: %s", image.Key, image.Bucket, err.Error())
+			return err
 		}
 	}
 	return nil
