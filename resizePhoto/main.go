@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -52,7 +51,7 @@ func (h *Handler) processImages(images []photo.GetPhotoOutput) ([]processor.Imag
 	for _, image := range images {
 		processedImage, err := h.imageProcessor.Run(processor.Image(image))
 		if nil != err {
-			return []processor.Image{}, fmt.Errorf("error processing image %s/%s: %s", image.Bucket, image.Key, err.Error())
+			return []processor.Image{}, err
 		} else {
 			processedImages = append(processedImages, processedImage)
 		}

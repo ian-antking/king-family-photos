@@ -204,7 +204,7 @@ func (s *handlerTestSuite) TestProcessImages() {
 			},
 		})
 
-		assert.Equal(t, "error processing image bucket/photo2: something went wrong", err.Error())
+		assert.Equal(t, "something went wrong", err.Error())
 	})
 }
 
@@ -295,7 +295,7 @@ func (s *handlerTestSuite) TestRun() {
 		})
 
 		assert.NotNil(t, err)
-		assert.Equal(t, "error processing image bucket/photo: something went wrong", err.Error())
+		assert.Equal(t, "something went wrong", err.Error())
 	})
 
 	s.T().Run("returns s3.Put error", func(t *testing.T) {
