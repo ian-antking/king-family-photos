@@ -1,6 +1,7 @@
 package photo
 
 import (
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
@@ -22,7 +23,11 @@ func (s *S3) Delete(params DeletePhotoParams) error {
 
 	_, err := s.client.DeleteObject(&deletePhotoInput)
 
-	return err
+	if nil != err {
+		return DeletePhotoError{Err: fmt.Errorf("error deleting %s from %s: %s", params.Key, params.Bucket, err.Error())}
+	}
+
+	return nil
 }
 
 func NewS3(client s3Client) S3 {

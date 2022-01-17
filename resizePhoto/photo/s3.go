@@ -2,6 +2,7 @@ package photo
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -33,7 +34,7 @@ func (s *S3) Get(params GetPhotoParams) (GetPhotoOutput, error) {
 	_, err := s.downloader.Download(buffer, &getObjectInput)
 
 	if nil != err {
-		return GetPhotoOutput{}, err
+		return GetPhotoOutput{}, GetPhotoError{Err: fmt.Errorf("error getting %s from %s: %s", params.Key, params.Bucket, err.Error())}
 	}
 
 	output := GetPhotoOutput{
@@ -54,7 +55,11 @@ func (s *S3) Put(params PutPhotoParams) error {
 
 	_, err := s.uploader.Upload(&putObjectInput)
 
-	return err
+	if nil != err {
+		return PutPhotoError{Err: fmt.Errorf("error putting %s in %s: %s", params.Key, params.Bucket, err.Error())}
+	}
+
+	return nil
 }
 
 func NewS3(downloader s3Downloader, uploader s3Uploader) S3 {

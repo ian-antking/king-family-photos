@@ -80,7 +80,8 @@ func (s *s3TestSuite) TestGet() {
 		})
 
 		assert.NotNil(t, err)
-		assert.Equal(t, "something went wrong", err.Error())
+		assert.True(t, errors.Is(err, GetPhotoError{}))
+		assert.Equal(t, "error getting photoKey from ingestBucket: something went wrong", err.Error())
 	})
 }
 
@@ -125,7 +126,8 @@ func (s *s3TestSuite) TestPut() {
 		err := photoRepo.Put(params)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, "something went wrong", err.Error())
+		assert.True(t, errors.Is(err, PutPhotoError{}))
+		assert.Equal(t, "error putting photoKey in displayBucket: something went wrong", err.Error())
 	})
 }
 
