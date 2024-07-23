@@ -1,3 +1,5 @@
 # King Family Photos
 
-The cloud infrastructure which supports a digital photo frame I built for my mother. My personal media server syncs family photos with an `S3 bucket`, which then triggers a `lambda` to copy the image and resize it for display before putting it into another s3 bucket. The photo frame then grabs new photos from this bucket at midnight and displayes them. The lambdas were built in `GoLang`, with unit and integration tests. Cloud resources are managed as `Infrastructure as Code` with the `serverless framework`, and automated testing and deployment is performed by `GitHub Actions`.
+<img src="docs/diagrams/king_family_photos.png" alt="high level infrastructure diagram"
+style="max-width:600px;">
+
