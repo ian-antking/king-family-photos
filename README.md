@@ -5,9 +5,9 @@ A Serverless app for distributing digital photo frame content. Built in Golang, 
 <img src="docs/diagrams/king_family_photos.png" alt="high level infrastructure diagram"
 style="max-width:600px;">
 
-1. Photos on home media server are synced to `backup bucket` bucket.
-1. New photos in bucket trigger `resizePhoto` lambda to copy smaller resolution version of image to `display bucket`.
-1. Digital photo frame downloads new images every night at `00:00` and restarts.
+1. Photos on home media server are synced to `backup bucket`
+1. New photos in bucket trigger `resizePhoto` lambda to copy smaller resolution version of image to `display bucket`
+1. Digital photo frame downloads new images every night at `00:00` and restarts
 1. Photos removed from `backup bucket` trigger `removePhoto` lambda to remove photo from `display bucket`
 
 ## Requirements
